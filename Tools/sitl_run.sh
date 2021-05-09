@@ -20,6 +20,7 @@ model="$4"
 world="$5"
 src_path="$6"
 build_path="$7"
+no_sim=1
 # The rest of the arguments are files to copy into the working dir.
 
 echo SITL ARGS

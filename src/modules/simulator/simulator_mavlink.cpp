@@ -223,7 +223,7 @@ void Simulator::update_sensors(const hrt_abstime &time, const mavlink_hil_sensor
 
 				} else if (!_accel_blocked[i]) {
 					_px4_accel[i].set_temperature(_sensors_temperature);
-
+					//PX4_INFO("ACCELOMETER x:%lf, y:%lf, z:%lf", sensors.xacc, sensors.yacc, sensors.zacc);
 					_last_accel_fifo.samples = 1;
 					_last_accel_fifo.dt = time - _last_accel_fifo.timestamp_sample;
 					_last_accel_fifo.timestamp_sample = time;
@@ -264,6 +264,7 @@ void Simulator::update_sensors(const hrt_abstime &time, const mavlink_hil_sensor
 				} else if (!_gyro_blocked[i]) {
 					_px4_gyro[i].set_temperature(_sensors_temperature);
 
+					//PX4_INFO("GYRO x:%lf, y:%lf, z:%lf", sensors.xgyro, sensors.ygyro, sensors.zgyro);
 					_last_gyro_fifo.samples = 1;
 					_last_gyro_fifo.dt = time - _last_gyro_fifo.timestamp_sample;
 					_last_gyro_fifo.timestamp_sample = time;
@@ -390,6 +391,7 @@ void Simulator::handle_message_hil_gps(const mavlink_message_t *msg)
 		gps.lon = hil_gps.lon;
 		gps.alt = hil_gps.alt;
 		gps.alt_ellipsoid = hil_gps.alt;
+		//PX4_INFO("GPS x:%d, y:%d, z:%d", hil_gps.lat, hil_gps.lon, hil_gps.alt);
 
 		gps.s_variance_m_s = 0.25f;
 		gps.c_variance_rad = 0.5f;
