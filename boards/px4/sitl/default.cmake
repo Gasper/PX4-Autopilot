@@ -56,6 +56,7 @@ px4_add_board(
 		#sih
 		simulator
 		temperature_compensation
+		traktor
 		uuv_att_control
 		uuv_pos_control
 		vmount
