@@ -49,11 +49,13 @@
 
 #include <uORB/uORB.h>
 #include <uORB/topics/navigator_mission_item.h>
+#include <uORB/topics/actuator_controls.h>
 
 #define TRACTOR_STATE_UNKNOWN -1
 #define TRACTOR_STATE_MOVING 1
 #define TRACTOR_STATE_SWITCHING_REVERSE 2
 #define TRACTOR_STATE_REVERSING 3
+#define TRACTOR_STATE_SWITCHING_FORWARD 4
 
 void read_mission_item(int index, struct mission_item_s *item);
 
@@ -106,6 +108,13 @@ int traktor_main(int argc, char *argv[])
 		 * { .fd = other_sub_fd,   .events = POLLIN },
 		 */
 	};
+
+	struct actuator_controls_s controls_out;
+	memset(&controls_out, 0, sizeof(controls_out));
+	orb_advert_t controls_pub_fd = orb_advertise(ORB_ID(actuator_controls_2), &controls_out);
+
+	controls_out.control[4] = 0.444;
+	orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 
 	int error_counter = 0;
 
@@ -163,13 +172,30 @@ int traktor_main(int argc, char *argv[])
 					(double)missionitem.params[5],
 					(double)missionitem.params[6]);
 
-					if (abs(missionitem.params[0] - 31.0f) < 0.0001) {
+					if (abs(missionitem.params[0] - 1.0f) < 0.0001) {
 						PX4_INFO("SWITCH TO REVERSE");
+						state = TRACTOR_STATE_SWITCHING_REVERSE;
+						controls_out.control[4] = 0.8;
+						orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 					}
 					else {
 						PX4_INFO("SWITCH TO FORWARD");
+						state = TRACTOR_STATE_SWITCHING_FORWARD;
+						controls_out.control[4] = -0.8;
+						orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 					}
 				}
+				else {
+					if (state == TRACTOR_STATE_SWITCHING_FORWARD || state == TRACTOR_STATE_UNKNOWN) {
+						state = TRACTOR_STATE_MOVING;
+					}
+					else {
+						state = TRACTOR_STATE_REVERSING;
+					}
+
+					controls_out.control[4] = 0;
+					orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
+				}						
 			}
 
 			/* there could be more file descriptors here, in the form like:
