@@ -118,14 +118,14 @@ int traktor_main(int argc, char *argv[])
 
 	int error_counter = 0;
 
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; ; i++) {
 		/* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
-		int poll_ret = px4_poll(fds, 1, 1000 * 60 * 3);
+		int poll_ret = px4_poll(fds, 1, 1000);
 
 		/* handle the poll result */
 		if (poll_ret == 0) {
 			/* this means none of our providers is giving us data */
-			PX4_ERR("Got no data within a second");
+			PX4_WARN("Got no data within a second");
 
 		} else if (poll_ret < 0) {
 			/* this is seriously bad - should be an emergency */
@@ -176,31 +176,25 @@ int traktor_main(int argc, char *argv[])
 						PX4_INFO("SWITCH TO REVERSE");
 						state = TRACTOR_STATE_SWITCHING_REVERSE;
 						controls_out.control[4] = 0.8;
-						orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 					}
 					else {
 						PX4_INFO("SWITCH TO FORWARD");
 						state = TRACTOR_STATE_SWITCHING_FORWARD;
 						controls_out.control[4] = -0.8;
-						orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 					}
-				}
-				else {
-					if (state == TRACTOR_STATE_SWITCHING_FORWARD || state == TRACTOR_STATE_UNKNOWN) {
-						state = TRACTOR_STATE_MOVING;
-					}
-					else {
-						state = TRACTOR_STATE_REVERSING;
-					}
-
-					controls_out.control[4] = 0;
-					orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 				}						
 			}
 
-			/* there could be more file descriptors here, in the form like:
-			 * if (fds[1..n].revents & POLLIN) {}
-			 */
+			if (state == TRACTOR_STATE_SWITCHING_FORWARD || state == TRACTOR_STATE_UNKNOWN) {
+				state = TRACTOR_STATE_MOVING;
+				PX4_INFO("SWITCHED TO moving");
+			}
+			else if (state == TRACTOR_STATE_SWITCHING_REVERSE) {
+				state = TRACTOR_STATE_REVERSING;
+				PX4_INFO("SWITCHED TO reversing");
+			}
+
+			orb_publish(ORB_ID(actuator_controls_2), controls_pub_fd, &controls_out);
 		}
 	}
 
